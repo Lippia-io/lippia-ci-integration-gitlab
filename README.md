@@ -1,4 +1,5 @@
-# Pipeline Sample WEB
+# Gitlab pipeline example
+
  Es un proyecto que tiene como finalidad automatizar el testeo del codigo ingresado al repositorio, utilizando el framework Lippia.
 
 ## Consideraciones
