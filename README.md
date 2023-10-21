@@ -1,92 +1,141 @@
-# Gitlab pipeline example
+# Pipeline Sample WEB
+ Es un proyecto que tiene como finalidad automatizar el testeo del codigo ingresado al repositorio, utilizando el framework Lippia.
 
+## Consideraciones
 
+El proyecto incluye la imagen de Lippia con todas las herramientas necesarias para los tests que se ejecutan segun donde se haga el commit o el merge:
 
-## Getting started
+- Cuando el commit se realiza a main o master el test se ejecuta automaticamente
+- Cuando el commit se realiza a otro branch el test se debe ejecutar manualmente
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Como se usa
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### CI dentro del repositorio de una app
 
-## Add your files
+En caso de ejecutar los test en el proceso de integración/delivery de una aplicación, se debe incluir el bloque ejemplo correspondiente.
+Los cambios fundamentales a tener en cuenta son el clonado del repo dentro del before script:
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+```yaml
+  ...
+  before_script:
+  ...
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/path/to/your/<AUTOMATION_PROJECT>.git"
+    - cd <AUTOMATION_PROJECT>
+  ...
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.crowdaronline.com/lippia/products/samples/ci-tools-integration/gitlab-pipeline-example.git
-git branch -M main
-git push -uf origin main
+Y las rules que permiten configurar que perfiles y test se van a ejecutar en cada ambiente dependiendo desde que branch se disparó el pipeline: 
+
+```yaml
+  
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        TAG:  "@Regression"
+        TYPE: "@Api"
+        ENV:  "Dev"
+        LANG: "@EN"
+        # Your other configuration variables here
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        TAG:  "@Regression"
+        TYPE: "@Api"
+        ENV:  "Test"
+        LANG: "@EN"
+        # Your other configuration variables here
+  ...
+
 ```
 
-## Integrate with your tools
+Para que el pipeline clone el repositorio donde se encuentre su proyecto de testing automatizado y ejecute dentro de la carpeta el test.
 
-- [ ] [Set up project integrations](https://gitlab.crowdaronline.com/lippia/products/samples/ci-tools-integration/gitlab-pipeline-example/-/settings/integrations)
+> Se recomienda configurar las credenciales en variables de entorno de la herramienta de CI para evitar filtrar contraseñas en el código del repositorio.
 
-## Collaborate with your team
+### CI dentro del repositorio de automation
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Para poder ejecutar el pipeline se debe agregar el ejemplo correspondiente:
 
-## Test and Deploy
+```yaml
+Testing automation:
+  stage: Test
+  before_script:
+    - |   
+          echo "Valores de las variables"
+          echo "TAG= $TAG"
+          echo "TESTTYPE= $TESTTYPE"
+          echo "LANG= $LANG"
+        # Your other configuration variables here
+  script:
+    - | 
+      mvn test -P$TESTTYPE -Dcrowdar.cucumber.filter="'$TAG'" -Dcrowdar.cucumber.filter.language="'$LANG'"
 
-Use the built-in continuous integration in GitLab.
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+      variables:
+        TAG: "@Success"
+        TESTTYPE: "Secuencial"
+        LANG: "@EN"
+        # Your other configuration variables here
+    - if: '$CI_COMMIT_BRANCH != "master" && $CI_COMMIT_BRANCH != "main"'
+      when: manual
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+  artifacts:
+    when: always
+    paths:
+      - target/reports/
 
-***
+```
 
-# Editing this README
+Este ejemplo es una simplificación que permite ejecutar las pruebas desde el repositorio que contiene el código de automation
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+* Un nuevo commit en el repositorio a las branches "main" o "master" dispara el pipeline automaticamente, iniciando las pruebas pertinentes. Si se desea cambiar esto se puede modificar en la siguiente sección del documento:
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```
+rules:
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "test"'
+     #se modifican las ramas, tambien puede eliminarse una o agregar otra
+```
+* Tambien se pueden modificar las ramas que disparan el pipeline de forma manual en la siguiente seccion del documento:
 
-## Name
-Choose a self-explaining name for your project.
+```
+- if: '$CI_COMMIT_BRANCH != "dev" && $CI_COMMIT_BRANCH != "test"'
+      when: manual
+      #se modifican las ramas, tambien puede eliminarse una o agregar otra
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+* Este pipeline trabaja con la version de lippia 3.1.2.2, en caso de querer modificarla utilizar una imagen desde el siguiente link
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+> https://hub.docker.com/r/crowdar/lippia/tags
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- Antes de disparar el pipeline se deben configurar las siguientes variables de entorno dentro del archivo .gitlab-ci.yml en la siguiente seccion:
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```
+variables:
+        TAG: "@Smoke"
+        TESTTYPE: parallel
+        BROWSERTYPE: chromeHeadless
+        LANG: "@EN"
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+- Los valores de dichas variables se encuentran en el archivo POM.xml
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+  * **TAG**: lleva el nombre de la prueba
+  * **TESTTYPE**:  determina el tipo de pruebas a realizar
+  * **BROWSERTYPE**: determina el perfil de buscador que se usara, para mas informacion ver documentacion lippia 
+  * **LANG**: determina el idioma
+  
+**NOTA:  el pipeline permite modificar o agregar mas variables de entorno dentro del apartado "variables"**
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+* para realizar las pruebas utilizamos el comando: 
+```
+$ mvn clean test
+```
+* En caso de agregar o modificar variables de entorno realizar los cambios necesarios en el script del test en los archivos YAML
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Los reportes son generados en una carpeta llamada **Target**, que sera generada una vez que la ejecucion de las pruebas haya finalizado.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+* El artifact se encuentra para descargar en CI/CD --> Pipelines, dentro del pipeline finalizado, en la parte derecha de la pagina.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+**para mas informacion ver [documentación lippia.](https://github.com/Crowdar/lippia-web-sample-project#getting-started "documentación lippia.")**
