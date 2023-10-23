@@ -1,0 +1,52 @@
+image: crowdar/lippia:3.2.1.1
+services:
+  - crowdar/lippia:3.2.1.1
+stages:
+  - Build
+  - Deploy
+  - Test
+
+#### Job example to run testing in your app build CI pipeline ####
+#Build job:
+  # image:
+  # Stage: Build
+  # before_script:
+  # script:
+
+# Deploy job:
+#   image: 
+#     name: 
+#   stage: Deploy
+#   needs: ["Build"]
+#   before_script:
+#   script:
+
+#### Job example to run testing in your automation projects CI pipeline ####
+
+Testing automation:
+  stage: Test
+  before_script:
+    - |   
+          echo "Valores de las variables"
+          echo "TAG= $TAG"
+          echo "TESTTYPE= $TESTTYPE"
+          echo "LANG= $LANG"
+        # Your other configuration variables here
+  script:
+    - | 
+      mvn test -P$TESTTYPE -Dcrowdar.cucumber.filter="'$TAG'" -Dcrowdar.cucumber.filter.language="'$LANG'"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+      variables:
+        TAG: "@Success"
+        TESTTYPE: "Secuencial"
+        LANG: "@EN"
+        # Your other configuration variables here
+    - if: '$CI_COMMIT_BRANCH != "master" && $CI_COMMIT_BRANCH != "main"'
+      when: manual
+
+  artifacts:
+    when: always
+    paths:
+      - target/reports/

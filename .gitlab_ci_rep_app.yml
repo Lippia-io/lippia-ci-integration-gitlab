@@ -1,0 +1,60 @@
+image: crowdar/lippia:3.2.1.1
+services:
+  - crowdar/lippia:3.2.1.1
+stages:
+  - Build
+  - Deploy
+  - Test
+
+#### Job example to run testing in your app build CI pipeline ####
+#Build job:
+  # image:
+  # Stage: Build
+  # before_script:
+  # script:
+
+# Deploy job:
+#   image: 
+#     name: 
+#   stage: Deploy
+#   needs: ["Build"]
+#   before_script:
+#   script:
+
+
+Testing automation: 
+  stage: Test
+  before_script:
+    - |
+          echo "ENV:          $ENV"
+          echo "TAG:          $TAG"
+          echo "TYPE:         $TYPE"
+          echo "LANG:         $LANG"
+        # Your other configuration variables here
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/path/to/your/<AUTOMATION_PROJECT>.git"
+    - cd <AUTOMATION_PROJECT>
+  script:
+    - mvn test -P$TESTTYPE -Dcrowdar.cucumber.filter="'$TAG'" -Dcrowdar.cucumber.filter.language="'$LANG'""
+  artifacts:
+    when: always
+    paths:
+      - <AUTOMATION_PROJECT>/target/extent-reports/
+    expire_in: 5 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        TAG:  "@Regression"
+        TYPE: "@Api"
+        ENV:  "Dev"
+        LANG: "@EN"
+        # Your other configuration variables here
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        TAG:  "@Regression"
+        TYPE: "@Api"
+        ENV:  "Test"
+        LANG: "@EN"
+        # Your other configuration variables here
+
+
+#### Job example to run testing in your automation projects CI pipeline ####
