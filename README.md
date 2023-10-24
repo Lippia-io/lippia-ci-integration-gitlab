@@ -11,7 +11,7 @@ El proyecto incluye la imagen de Lippia con todas las herramientas necesarias pa
 
 ## Como se usa
 
-### CI dentro del repositorio de una app
+### CI dentro del repositorio de una app (.gitlab_ci_rep_app.yml)
 
 En caso de ejecutar los test en el proceso de integración/delivery de una aplicación, se debe incluir el bloque ejemplo correspondiente.
 Los cambios fundamentales a tener en cuenta son el clonado del repo dentro del before script:
@@ -52,7 +52,7 @@ Para que el pipeline clone el repositorio donde se encuentre su proyecto de test
 
 > Se recomienda configurar las credenciales en variables de entorno de la herramienta de CI para evitar filtrar contraseñas en el código del repositorio.
 
-### CI dentro del repositorio de automation
+### CI dentro del repositorio de automation (.gitlab_ci_own_aut_project.yml)
 
 Para poder ejecutar el pipeline se debe agregar el ejemplo correspondiente:
 
